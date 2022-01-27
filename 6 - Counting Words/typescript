@@ -1,0 +1,410 @@
+Script started on Thu 05 Dec 2019 12:58:07 AM EST
+zmumbcs@itserver6:~/cs240/hw6$ ls -l
+total 32
+-rw-r--r-- 1 zmumbcs cs240-1G 1001 Dec  5 00:41 addword.c
+-rw-r--r-- 1 zmumbcs cs240-1G 1458 Nov 26 22:28 gettysburg.txt
+-rw-r--r-- 1 zmumbcs cs240-1G  837 Dec  4 23:48 getword.c
+-rw-r--r-- 1 zmumbcs cs240-1G  631 Dec  5 00:51 makefile
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Sep 10 14:09 none
+-rw-r--r-- 1 zmumbcs cs240-1G  387 Dec  5 00:35 printword.c
+-rw-r--r-- 1 zmumbcs cs240-1G 1759 Dec  5 00:37 sortlist.c
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Dec  5 00:58 typescript
+-rw-r--r-- 1 zmumbcs cs240-1G  452 Dec  5 00:53 wordcounter.c
+-rw-r--r-- 1 zmumbcs cs240-1G  427 Dec  5 00:35 word.h
+zmumbcs@itserver6:~/cs240/hw6$ cat wordcounter.c
+/*Zhuoming Huang wordcounter.c */
+#include <stdio.h>
+#include <ctype.h>
+#include "word.h"
+
+word *wordlist[MAXWORD];
+int count=0;
+
+int main(void){
+	word * firstw=NULL;
+	char c,aword[MAXLEN];
+	int len=0;//length of a single word be read
+	//read words from inputs
+	while((len=getword(aword,MAXWORD))>0){
+		if(isalpha(aword[0])){
+			firstw = addword(firstw,aword,len);
+		}
+	}
+	storewords(firstw);
+	sortlist();
+	printword();
+	freeword(firstw);
+	return 0;
+}
+zmumbcs@itserver6:~/cs240/hw6$ cat getword.c
+/*Zhuoming Huang	modified getword.c
+get next word or character from input
+K&R page136*/
+#include <stdio.h>
+#include <ctype.h>
+
+#define BUFSIZE 100
+char buf[BUFSIZE];        /* buffer for ungetch */
+int  bufp = 0;            /* next free position in buf */
+
+int getch(void)           /* get a (possibly pushed back) character */
+{
+    return(bufp > 0) ? buf[--bufp] : getchar();
+}
+
+void ungetch(int c)        /* push character back on input */
+{
+    if (bufp >= BUFSIZE)
+        printf("ungetch: too many character \n");
+    else
+        buf[bufp++] = c;
+}
+
+int getword(char *word, int lim){
+	int c,len=0;
+	while(isspace(c=getch()))
+		;
+	if(c!=EOF)
+		*word++ = c;
+		len++;
+	if(!isalpha(c)){
+		*word = '\0';
+		return c;
+	}
+	for(;--lim>0;word++)
+		if(!isalnum(*word=getch())){
+			ungetch(*word);
+			break;
+		}
+	*word = '\0';
+	return len;
+}
+zmumbcs@itserver6:~/cs240/hw6$ cat addword.c
+/*Zhuoming Huang addword.c */
+#include <string.h>
+#include <malloc.h>
+#include "word.h"
+
+extern word * wordlist[MAXWORD];
+extern int count;
+
+word * addword(word * firstw, char * aword, int len){
+	int cmpresult;
+	
+	if(firstw == NULL){
+		firstw = (word *)malloc(sizeof(word));
+		firstw->character = (char *)malloc(len+1); //+1 for '\0'
+		if(firstw->character != NULL)
+			strcpy(firstw->character,aword);
+		firstw->count = 1;
+		firstw->next = NULL;
+		firstw->prev = firstw->next;
+	}else if((cmpresult = strcmp(aword,firstw->character)) == 0){
+		firstw->count++; //same word found
+	}else if(cmpresult > 0){ //sort base on alphabet 
+		firstw->next = addword(firstw->next,aword,len);
+	}else{
+		firstw->prev = addword(firstw->prev,aword,len);
+	}
+	return firstw;
+}
+
+void storewords(word * firstw){
+        if(firstw!=NULL){
+                storewords(firstw->prev);
+                if(count<MAXWORD){
+                        wordlist[count++]=firstw;
+                }
+		storewords(firstw->next);
+        }
+}
+zmumbcs@itserver6:~/cs240/hw6$ cat sortlist.c
+/*Zhuoming Huang sortlist.c */
+#include <string.h>
+#include "word.h"
+extern word * wordlist[MAXWORD];
+extern int count;
+
+void sortlist(void)
+{	
+	int mid,i,j;//for counting
+	word * temp;//for holding words
+	//sort wordlist base on occurrence in increasing order 
+	for(mid=count/2;mid>0;mid/=2)
+		for(i=mid;i<count;i++)
+			for(j=i-mid;j>=0;j-=mid){
+				if((wordlist[j]->count)<=(wordlist[j+mid]->count))
+					break;		
+				temp = wordlist[j];
+				wordlist[j] = wordlist[j+mid];
+				wordlist[j+mid] = temp;
+			}
+
+	//sort wordlist base on character: upper cases to lower cases, a to z
+        for(mid=count/2;mid>0;mid=mid/2)
+                for(i=mid;i<count;i++)
+                        for(j=i-mid;j>=0;j-=mid)
+                                if((wordlist[j]->count)==(wordlist[j+mid]->count)){
+                                        if((wordlist[j]->character[0])<=(wordlist[j+mid]->character[0]))
+						break;
+                                        temp = wordlist[j];
+                                        wordlist[j] = wordlist[j+mid];
+                                        wordlist[j+mid] = temp;
+				}
+        //sort wordlist base on length of word
+        for(mid=count/2;mid>0;mid/=2)
+                for(i=mid;i<count;i++)
+                        for(j=i-mid;j>=0;j-=mid)
+				if((wordlist[j]->count)==(wordlist[j+mid]->count))
+					if((wordlist[j]->character[0])==(wordlist[j+mid]->character[0])){
+                        	 		if((strlen(wordlist[j]->character))<=(strlen(wordlist[j+mid]->character)))
+							break;
+                                        temp = wordlist[j];
+                                        wordlist[j] = wordlist[j+mid];
+                                        wordlist[j+mid] = temp;
+                                }
+}
+zmumbcs@itserver6:~/cs240/hw6$ cat printword.c
+/*Zhuoming Huang printword.c */
+#include <stdio.h>
+#include <malloc.h>
+#include "word.h"
+
+extern word * wordlist[MAXWORD];
+extern int count;
+
+void printword(void)
+{
+	int i;
+	for(i=0; i<count; i++)
+		printf("%2d:	%.10s\n",wordlist[i]->count,wordlist[i]->character);
+}
+
+void freeword(word * firstw)
+{
+	free(firstw->character);
+	firstw->character = NULL;
+	free(firstw);
+	firstw = NULL;	
+}
+
+zmumbcs@itserver6:~/cs240/hw6$ cat word.h
+/*Zhuoming Huang	12/03/2019	word.h */
+#define MAXLEN 15 //max num of chars in one word
+#define MAXWORD 1000 //max num of words can store
+
+typedef struct word word;
+
+struct word{
+        int count;
+        char *character;
+        word *prev;
+        word *next;
+};
+
+int getword(char *, int);
+void sortlist(void);
+void printword(void);
+void freeword(word *);
+void storewords(word *);
+word * addword(word *, char *, int);
+zmumbcs@itserver6:~/cs240/hw6$ cat makefile
+# makefile for hw6
+cc = gcc
+CFLAGS = -m32 
+
+wordcounter:	wordcounter.o getword.o addword.o sortlist.o printword.o
+		$(cc) $(CFLAGS) -g -o wordcounter wordcounter.o getword.o addword.o sortlist.o printword.o
+wordcounter.o:	wordcounter.c word.h
+		$(cc) $(CFLAGS) -c -o wordcounter.o wordcounter.c
+getword.o:	getword.c word.h
+		$(cc) $(CFLAGS) -c -o getword.o getword.c
+addword.o:	addword.c word.h
+		gcc $(CFLAGS) -c -o addword.o addword.c
+sortlist.o:     sortlist.c word.h
+		$(cc) $(CFLAGS) -c -o sortlist.o sortlist.c
+printword.o:	printword.c word.h
+		$(cc) $(CFLAGS) -c -o printword.o printword.c
+clean:
+		rm *.o
+zmumbcs@itserver6:~/cs240/hw6$ cat gettysburg.txt
+Four score and seven years ago our fathers brought forth on this
+continents a new nation, conceived in Liberty, and dedicated to the
+proposition that all men are created equal.  Now we are engaged in a
+great civil war, testing whether that nation or any nation so
+conceived and so dedicated, can long endure. We are met on a great
+battle field of that war. We have come to dedicate a portion of that
+field, as a final resting place for those who here gave their lives
+that that nation might live. It is altogether fitting and proper that
+we should do this.  But, in a larger sense, we can not dedicate we can
+not consecrate  we can not hallow this ground. The brave men, living
+and dead, who struggled here, have consecrated it, far above our poor
+power to add or detract. The world will little note, nor long remember
+what we say here, but it can never forget what they did here. It is
+for us the living, rather, to be dedicated here to the unfinished work
+which they who fought here have thus far so nobly advanced.  It is
+rather for us to be here dedicated to the great task remaining before
+us that from these honored dead we take increased devotion to that
+cause for which they gave the last full measure of devotion that we
+here highly resolve that these dead shall not have died in vain that
+this nation, under God, shall have a new birth of freedom and that
+government of the people, by the people, for the people, shall not
+perish from the earth.
+
+
+zmumbcs@itserver6:~/cs240/hw6$ make
+gcc -m32  -c -o wordcounter.o wordcounter.c
+gcc -m32  -c -o getword.o getword.c
+gcc -m32  -c -o addword.o addword.c
+gcc -m32  -c -o sortlist.o sortlist.c
+gcc -m32  -c -o printword.o printword.c
+gcc -m32  -g -o wordcounter wordcounter.o getword.o addword.o sortlist.o printword.o
+zmumbcs@itserver6:~/cs240/hw6$ ./wordcounter <gettysburg.txt
+ 1:	But
+ 1:	Four
+ 1:	God
+ 1:	Liberty
+ 1:	Now
+ 1:	as
+ 1:	all
+ 1:	ago
+ 1:	add
+ 1:	any
+ 1:	above
+ 1:	advanced
+ 1:	altogether
+ 1:	by
+ 1:	but
+ 1:	brave
+ 1:	birth
+ 1:	before
+ 1:	battle
+ 1:	brought
+ 1:	come
+ 1:	civil
+ 1:	cause
+ 1:	created
+ 1:	consecrate
+ 1:	continents
+ 1:	consecrate
+ 1:	do
+ 1:	did
+ 1:	died
+ 1:	detract
+ 1:	equal
+ 1:	earth
+ 1:	endure
+ 1:	engaged
+ 1:	full
+ 1:	forth
+ 1:	final
+ 1:	fought
+ 1:	forget
+ 1:	fathers
+ 1:	freedom
+ 1:	fitting
+ 1:	ground
+ 1:	government
+ 1:	highly
+ 1:	hallow
+ 1:	honored
+ 1:	increased
+ 1:	last
+ 1:	live
+ 1:	lives
+ 1:	little
+ 1:	larger
+ 1:	met
+ 1:	might
+ 1:	measure
+ 1:	nor
+ 1:	note
+ 1:	nobly
+ 1:	never
+ 1:	poor
+ 1:	place
+ 1:	power
+ 1:	proper
+ 1:	perish
+ 1:	portion
+ 1:	propositio
+ 1:	resolve
+ 1:	resting
+ 1:	remember
+ 1:	remaining
+ 1:	say
+ 1:	score
+ 1:	sense
+ 1:	seven
+ 1:	should
+ 1:	struggled
+ 1:	task
+ 1:	take
+ 1:	thus
+ 1:	those
+ 1:	their
+ 1:	testing
+ 1:	under
+ 1:	unfinished
+ 1:	vain
+ 1:	work
+ 1:	will
+ 1:	world
+ 1:	whether
+ 1:	years
+ 2:	The
+ 2:	We
+ 2:	be
+ 2:	conceived
+ 2:	dedicate
+ 2:	devotion
+ 2:	far
+ 2:	from
+ 2:	field
+ 2:	gave
+ 2:	it
+ 2:	long
+ 2:	living
+ 2:	men
+ 2:	new
+ 2:	on
+ 2:	or
+ 2:	our
+ 2:	rather
+ 2:	these
+ 2:	war
+ 2:	what
+ 2:	which
+ 3:	It
+ 3:	are
+ 3:	dead
+ 3:	great
+ 3:	is
+ 3:	people
+ 3:	so
+ 3:	shall
+ 3:	they
+ 3:	us
+ 3:	who
+ 4:	dedicated
+ 4:	in
+ 4:	this
+ 5:	can
+ 5:	for
+ 5:	have
+ 5:	not
+ 5:	nation
+ 5:	of
+ 6:	and
+ 7:	a
+ 8:	here
+ 8:	to
+ 8:	we
+ 9:	the
+13:	that
+zmumbcs@itserver6:~/cs240/hw6$ make clean
+rm *.o
+zmumbcs@itserver6:~/cs240/hw6$ exit
+exit
+
+Script done on Thu 05 Dec 2019 12:59:30 AM EST

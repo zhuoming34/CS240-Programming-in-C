@@ -1,0 +1,100 @@
+Script started on Tue 12 Nov 2019 08:44:08 PM EST
+zmumbcs@itserver6:~/cs240/hw4$ ls -l
+total 64
+-rw-r--r-- 1 zmumbcs cs240-1G  107 Nov 12 16:23 calc.h
+-rw-r--r-- 1 zmumbcs cs240-1G   34 Nov 12 20:25 calc.in
+-rwxr-xr-x 1 zmumbcs cs240-1G 7844 Nov 12 20:38 calcit
+-rw-r--r-- 1 zmumbcs cs240-1G  596 Nov  7 14:33 getch.c
+-rw-r--r-- 1 zmumbcs cs240-1G 1344 Nov 12 20:38 getch.o
+-rw-r--r-- 1 zmumbcs cs240-1G  633 Nov  7 14:33 getop.c
+-rw-r--r-- 1 zmumbcs cs240-1G 1344 Nov 12 20:38 getop.o
+-rw-r--r-- 1 zmumbcs cs240-1G 1043 Nov 12 18:40 main.c
+-rw-r--r-- 1 zmumbcs cs240-1G 2172 Nov 12 20:38 main.o
+-rw-r--r-- 1 zmumbcs cs240-1G 1370 Nov  7 14:33 makefile1
+-rw-r--r-- 1 zmumbcs cs240-1G 1120 Nov 12 20:43 makefile2
+-rw-r--r-- 1 zmumbcs cs240-1G  676 Nov 12 16:05 stack.c
+-rw-r--r-- 1 zmumbcs cs240-1G 1404 Nov 12 20:38 stack.o
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Nov 12 20:44 typescript
+-rw-r--r-- 1 zmumbcs cs240-1G 6739 Nov 12 20:39 typescript1
+zmumbcs@itserver6:~/cs240/hw4$ make clean -f makefile2
+rm *.o
+zmumbcs@itserver6:~/cs240/hw4$ make -f makefile2
+cc -m32    -c -o main.o main.c
+cc -m32    -c -o getop.o getop.c
+cc -m32    -c -o stack.o stack.c
+cc -m32    -c -o getch.o getch.c
+gcc -m32  -g -o calcit main.o getop.o stack.o getch.o
+zmumbcs@itserver6:~/cs240/hw4$ vi getop.c
+[?1049h[?1h=[2;1H▽[6n[2;1H  [1;1H]11;?[1;37r[?12;25h[?12l[?25h[27m[23m[m[H[2J[?25l[37;1H"getop.c" 41L, 633C[>c[1;1H[33m  1 [m[34m/* [m
+[33m  2 [m[34m * getop.c[m
+[33m  3 [m[34m *[m
+[33m  4 [m[34m * gets next token: operator or numeric operand[m
+[33m  5 [m[34m */[m
+[33m  6 
+  7 [m[35m#include [m[31m<stdio.h>[m
+[33m  8 [m[35m#include [m[31m<ctype.h>[m
+[33m  9 [m[35m#include [m[31m"calc.h"[m
+[33m 10 
+ 11 [m[32mint[m getop([32mchar[m s[])
+[33m 12 [m{
+[33m 13 [m    [32mint[m i, c;
+[33m 14 
+ 15 [m    [33mwhile[m ((s[[31m0[m] = c = getch()) == [31m' '[m || c == [35m'\t'[m)
+[33m 16 [m[8C;
+[33m 17 
+ 18 [m    s[[31m1[m] = [35m'\0'[m;
+[33m 19 
+ 20 [m    [33mif[m (!isdigit(c) && c != [31m'.'[m)
+[33m 21 [m      [33mreturn[m c;  [34m/* not a number */[m
+[33m 22 
+ 23 [m    [34m/* collect integer part in string s */[m
+[33m 24 [m    i = [31m0[m;
+[33m 25 [m    [33mif[m (isdigit(c))
+[33m 26 [m      [33mwhile[m (isdigit(s[++i] = c = getch()))
+[33m 27 [m[12C;
+[33m 28 
+ 29 [m    [34m/* collect fractional part in string s */[m
+[33m 30 [m    [33mif[m (c == [31m'.'[m)
+[33m 31 [m      [33mwhile[m (isdigit(s[++i] = c = getch()))
+[33m 32 [m[8C;
+[33m 33 
+ 34 [m    s[i] = [35m'\0'[m;
+[33m 35 [m    [33mif[m (c != [31mEOF[m)
+[33m 36 [m      ungetch(c);[37;56H1,1[11CTop[1;5H[?12l[?25h[?25l[37;1H[1m-- INSERT --[m[37;13H[K[37;56H1,1[11CTop[1;5H[?12l[?25h[?25l[1;5H[K[2;5H[34m/[m[2;8H[K[3;7H[34m getop.c[m[4;7H[K[5;7H[34m gets next token: operator or numeric operand[6;5H */[m[7;5H[K[8;15H[31mstdio[9;14H<ctype.h>[m[10;5H[35m#include [m[31m"calc.h"[m[11;5H[K[12;5H[32mint[m getop([32mchar[m s[])[13;5H{[13;9H[K[14;9H[32mint[m i, c;[15;9H[K[16;9H[33mwhile[m ((s[[31m0[m] = c = getch()) == [31m' '[m || c == [35m'\t'[m)[17;13H;[18;9H[K[19;9Hs[[31m1[m] = [35m'\0'[m;[20;9H[K[21;9H[33mif[m (!isdigit(c) && c != [31m'.'[m)[21;37H[K[22;11H[33mreturn[m c;  [34m/* not a number */[m[23;9H[K[24;9H[34m/* collect integer part in string s */[m[25;9Hi = [31m0[m;[25;15H[K[26;9H[33mif[m (isdigit(c))[26;24H[K[27;11H[33mwhile[m (isdigit(s[++i] = c = getch()))[28;17H;[29;9H[K[30;9H[34m/* collect fractional part in string s */[m[31;9H[33mif[m (c == [31m'.'[m)[31;22H[K[32;11H[33mwhile[m (isdigit(s[++i] = c = getch()))[33;13H;[34;9H[K[35;9Hs[i] = [35m'\0'[m;[35;21H[K[36;9H[33mif[m (c != [31mEOF[m)[37;56H2[2;5H[?12l[?25h[?25l[37;56H1[1;5H[?12l[?25h[?25l/[37;58H2[1;6H[?12l[?25h[?25l[34m/*[m[2;5H[1m[37m[41m/[m[37;58H3[1;7H[?12l[?25h[?25l[34mZ[m[37;58H4[1;8H[?12l[?25h[?25l[34mh[m[37;58H5[1;9H[?12l[?25h[?25l[34mu[m[37;58H6[1;10H[?12l[?25h[?25l[34mo[m[37;58H7[1;11H[?12l[?25h[?25l[34mm[m[37;58H8[1;12H[?12l[?25h[?25l[34mi[m[37;58H9[1;13H[?12l[?25h[?25l[34mn[m[37;58H10[1;14H[?12l[?25h[?25l[34mg[m[37;59H1[1;15H[?12l[?25h[?25l[34m [m[37;59H2[1;16H[?12l[?25h[?25l[34mH[m[37;59H3[1;17H[?12l[?25h[?25l[34mu[m[37;59H4[1;18H[?12l[?25h[?25l[34ma[m[37;59H5[1;19H[?12l[?25h[?25l[34mn[m[37;59H6[1;20H[?12l[?25h[?25l[34mg[m[37;59H7[1;21H[?12l[?25h[?25l[34m [m[37;59H8[1;22H[?12l[?25h[?25l[34m1[m[37;59H9[1;23H[?12l[?25h[?25l[34m0[m[37;58H20[1;24H[?12l[?25h[?25l[1;23H[K[37;58H19[1;23H[?12l[?25h[?25l[34m1[m[37;58H20[1;24H[?12l[?25h[?25l[34m/[m[37;59H1[1;25H[?12l[?25h[?25l[34m1[m[37;59H2[1;26H[?12l[?25h[?25l[34m2[m[37;59H3[1;27H[?12l[?25h[?25l[34m/[m[37;59H4[1;28H[?12l[?25h[?25l[34m2[m[37;59H5[1;29H[?12l[?25h[?25l[34m0[m[37;59H6[1;30H[?12l[?25h[?25l[34m1[m[37;59H7[1;31H[?12l[?25h[?25l[34m9[m[37;59H8[1;32H[?12l[?25h[?25l[34m [m[37;59H9[1;33H[?12l[?25h[?25l[34mg[m[37;58H30[1;34H[?12l[?25h[?25l[34me[m[37;59H1[1;35H[?12l[?25h[?25l[34mt[m[37;59H2[1;36H[?12l[?25h[?25l[34mo[m[37;59H3[1;37H[?12l[?25h[?25l[34mp[m[37;59H4[1;38H[?12l[?25h[?25l[34m.[m[37;59H5[1;39H[?12l[?25h[?25l[34mc[m[37;59H6[1;40H[?12l[?25h[?25l[34m*[m[37;59H7[1;41H[?12l[?25h[?25l[34m/[2;5H/*[m[37;59H8[1;42H[?12l[?25h[37;1H[K[1;41H[?25l[37;56H1,37[10CTop[1;41H[?12l[?25h[?25l[37;56H[K[37;1H:[?12l[?25hw[?25l[?12l[?25hq[?25l[?12l[?25h[?25l"getop.c" 42L, 671C written
+[?1l>[?12l[?25h[?1049lzmumbcs@itserver6:~/cs240/hw4$ make -f makefile2
+cc -m32    -c -o getop.o getop.c
+gcc -m32  -g -o calcit main.o getop.o stack.o getch.o
+zmumbcs@itserver6:~/cs240/hw4$ touch calc.h
+zmumbcs@itserver6:~/cs240/hw4$ make -f makefile2
+make: 'calcit' is up to date.
+zmumbcs@itserver6:~/cs240/hw4$ diff -w makefile1 makefile2
+23,30d22
+< main.o:		main.c calc.h
+< 		$(cc) $(CFLAGS) -c -o main.o main.c
+< getop.o:	getop.c calc.h
+< 		$(cc) $(CFLAGS) -c -o getop.o getop.c
+< stack.o:	stack.c 
+< 		$(cc) $(CFLAGS) -c -o stack.o stack.c
+< getch.o: 	getch.c 
+< 		$(cc) $(CFLAGS) -c -o getch.o getch.c
+zmumbcs@itserver6:~/cs240/hw4$ ls -l
+total 64
+-rw-r--r-- 1 zmumbcs cs240-1G  107 Nov 12 20:46 calc.h
+-rw-r--r-- 1 zmumbcs cs240-1G   34 Nov 12 20:25 calc.in
+-rwxr-xr-x 1 zmumbcs cs240-1G 7844 Nov 12 20:45 calcit
+-rw-r--r-- 1 zmumbcs cs240-1G  596 Nov  7 14:33 getch.c
+-rw-r--r-- 1 zmumbcs cs240-1G 1344 Nov 12 20:44 getch.o
+-rw-r--r-- 1 zmumbcs cs240-1G  671 Nov 12 20:45 getop.c
+-rw-r--r-- 1 zmumbcs cs240-1G 1344 Nov 12 20:45 getop.o
+-rw-r--r-- 1 zmumbcs cs240-1G 1043 Nov 12 18:40 main.c
+-rw-r--r-- 1 zmumbcs cs240-1G 2172 Nov 12 20:44 main.o
+-rw-r--r-- 1 zmumbcs cs240-1G 1370 Nov  7 14:33 makefile1
+-rw-r--r-- 1 zmumbcs cs240-1G 1120 Nov 12 20:43 makefile2
+-rw-r--r-- 1 zmumbcs cs240-1G  676 Nov 12 16:05 stack.c
+-rw-r--r-- 1 zmumbcs cs240-1G 1404 Nov 12 20:44 stack.o
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Nov 12 20:44 typescript
+-rw-r--r-- 1 zmumbcs cs240-1G 6739 Nov 12 20:39 typescript1
+zmumbcs@itserver6:~/cs240/hw4$ exit
+exit
+
+Script done on Tue 12 Nov 2019 08:47:17 PM EST

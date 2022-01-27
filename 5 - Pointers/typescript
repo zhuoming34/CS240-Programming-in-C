@@ -1,0 +1,278 @@
+Script started on Mon 02 Dec 2019 05:01:49 PM EST
+zmumbcs@itserver6:~/cs240/hw5$ ls -l
+total 32
+-rw-r--r-- 1 zmumbcs cs240-1G 1474 Dec  2 13:32 lineholder.c
+-rw-r--r-- 1 zmumbcs cs240-1G  376 Dec  2 13:39 lineholder.h
+-rw-r--r-- 1 zmumbcs cs240-1G  264 Dec  1 19:45 makefile
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Sep 10 14:09 tail0.in
+-rw-r--r-- 1 zmumbcs cs240-1G  145 Dec  2 13:34 tail1.in
+-rw-r--r-- 1 zmumbcs cs240-1G  198 Dec  2 13:34 tail2.in
+-rw-r--r-- 1 zmumbcs cs240-1G  219 Dec  2 13:34 tail3.in
+-rw-r--r-- 1 zmumbcs cs240-1G  447 Nov 26 22:28 tail4.in
+-rw-r--r-- 1 zmumbcs cs240-1G  918 Dec  2 13:36 tail.c
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Dec  2 17:01 typescript
+zmumbcs@itserver6:~/cs240/hw5$ cat tail.c
+/*Zhuoming Huang	11/26/2019	tail.c
+interprets command line argurement*/
+#include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include <string.h>
+#include "lineholder.h"
+
+
+int main(int argc,char *argv[]){
+	int t,j,len,i=0;
+	char line[MAXLEN];
+	if (argc == 1){
+		t = DEFLINE;//default num of lines
+	}else if(argc == 2 && (*++argv)[0] == '-'){
+		t = atoi(argv[0]+1);        
+	}else{
+		printf("Enter: ./tail [-n]");
+		return 0;
+	}
+	//initialize the 'first' slot and related variables
+	if ((t==0) || (t>MAXLINE)){
+		return 0;//no lines or exceed
+	}else{
+		initl(t);
+	}
+	//insert line into an array when there is a new line
+	while((len=my_getline(line,MAXLEN))>0){
+		insertl(line);
+	}
+	//print out the last n lines when receive EOF
+	printl();
+}
+
+int my_getline(char s[], int lim){
+	int i,c;
+	for(i=0;(c=getchar())!='\n'&&c!=EOF&&i<lim-1;i++){
+		s[i]=c;
+	}
+	if(c=='\n'){
+		s[i]='\n';
+		i++;
+	}
+	s[i]='\0';
+	return i;
+}
+zmumbcs@itserver6:~/cs240/hw5$ cat lineholder.c
+/*Zhuoming Huang	11/26/2019	lineholder.c*/
+#include <stdio.h>
+#include <string.h>
+#include <malloc.h>
+#include "lineholder.h"
+
+static int first,last,full,i,n,len;
+static char *lines[MAXLINE];
+char *buf,*bufend,*ptr;
+
+void initl(int nline){
+	n = nline; //num of line to be printed
+	i=0; //counter for read lines
+	full=0; //flag checking if buffer is full
+	first = 0; //location of the first line
+	last = 0; //locaiton of the last line
+	for(int j=0;j<MAXLINE;j++)
+		lines[j] = NULL;
+	buf = (char *)malloc(MAXLINE*MAXLEN); //beginning address of a buffer
+	bufend = buf + MAXLINE * MAXLEN; //last address of the buffer
+	ptr = buf; //current address
+}
+
+void insertl(char *line){
+	len = strlen(line);
+        if(full==0){
+		last = i;
+		lines[last] = ptr;
+	        strcpy(lines[last],line);
+	        ptr += len + 1;
+		if (i==n-1){
+			full = 1;
+			ptr = buf;
+		}
+	}else{
+		last = i%n;
+		lines[last] = ptr;
+	        strcpy(lines[last],line);
+	        ptr += len + 1;
+		if (last==n-1)
+			first = 0;
+		else
+			first = last + 1;
+	}
+	i++;
+}
+
+void printl(void){
+	int j;
+	
+	if(last<first){
+		//buffer wrap around
+		for(j=first;j<n;j++){
+			printf("%s",lines[j]);
+		}
+		for(j=0;j<first;j++){
+			printf("%s",lines[j]);
+		}
+	}else{
+		//#lines read is less than required #line, print read lines
+		if(i<n)
+			last = i-1;
+		//the last read line is at the last position of buffer
+		for(j=0;j<=last;j++){
+			printf("%s",lines[j]);
+        	}
+	}
+	//free memory not in used
+	free(buf);
+	buf=NULL;
+}
+zmumbcs@itserver6:~/cs240/hw5$ cat lineholder.h
+/*Zhuoming Huang	11/26/2019	lineholder.h
+symbolic variables and function prototypes */
+
+#define MAXLINE 100
+#define MAXLEN 100
+#define DEFLINE 10
+
+//read lines from input
+int my_getline(char s[],int lim);
+//initialize variables in lineholder.c
+void initl(int nline);
+//insert lines into lines pointer
+void insertl(char *lines);
+//print out the last n lines
+void printl(void);
+zmumbcs@itserver6:~/cs240/hw5$ cat makefile
+CC = gcc
+CFLAGS = -m32
+
+tail: tail.o lineholder.o
+	$(CC) $(CFLAGS) tail.o lineholder.o -o tail
+tail.o: tail.c lineholder.h
+	$(CC) $(CFLAGS) -c -o tail.o tail.c
+lineholder.o: lineholder.c lineholder.h
+	$(CC) $(CFLAGS) -c -o lineholder.o lineholder.c
+clean:
+	rm *.o
+zmumbcs@itserver6:~/cs240/hw5$ make
+gcc -m32 -c -o tail.o tail.c
+gcc -m32 -c -o lineholder.o lineholder.c
+gcc -m32 tail.o lineholder.o -o tail
+zmumbcs@itserver6:~/cs240/hw5$ cat tail0.in
+zmumbcs@itserver6:~/cs240/hw5$ ./tail <tail0.in >tail0.out
+zmumbcs@itserver6:~/cs240/hw5$ cat tail1.in
+1. Now is the time
+2. for all good men
+3. to come to the
+4. aid of their country.
+5. Now is the time
+6. for all good men
+7. (less than 10 lines)
+zmumbcs@itserver6:~/cs240/hw5$ ./tail -3 <tail1.in >tail1.out
+zmumbcs@itserver6:~/cs240/hw5$ cat tail1.out
+5. Now is the time
+6. for all good men
+7. (less than 10 lines)
+zmumbcs@itserver6:~/cs240/hw5$ cat tail2.in
+1. Now is the time
+2. for all good men
+3. to come to the
+4. aid of their country.
+5. Now is the time
+6. for all good men
+7. to come to the
+8. aid of their country.
+9. Now is the time
+10. (10 lines)
+zmumbcs@itserver6:~/cs240/hw5$ ./tail -15 <tail2.in >tail2.out
+zmumbcs@itserver6:~/cs240/hw5$ cat tail2.out
+1. Now is the time
+2. for all good men
+3. to come to the
+4. aid of their country.
+5. Now is the time
+6. for all good men
+7. to come to the
+8. aid of their country.
+9. Now is the time
+10. (10 lines)
+zmumbcs@itserver6:~/cs240/hw5$ cat cail3.in
+1. Now is the time
+2. for all good men
+3. to come to the
+4. aid of their country.
+5. Now is the time
+6. for all good men
+7. to come to the
+8. aid of their country.
+9. Now is the time
+10. for all good men
+11. (11 lines)
+zmumbcs@itserver6:~/cs240/hw5$ ./tail -4 <tail3.in >tail3.out
+zmumbcs@itserver6:~/cs240/hw5$ cat tail3.out
+8. aid of their country.
+9. Now is the time
+10. for all good men
+11. (11 lines)
+zmumbcs@itserver6:~/cs240/hw5$ cat tail4.in
+1. Now is the time
+2. for all good men
+3. to come to the
+4. aid of their country.
+5. Now is the time
+6. for all good men
+7. to come to the
+8. aid of their country.
+9. Now is the time
+10. for all good men
+11. to come to the
+12. aid of their country.
+13. Now is the time
+14. for all good men
+15. to come to the
+16. aid of their country.
+17. Now is the time
+18. for all good men
+19. to come to the
+20. aid of their country.
+21. (twice as many lines)
+zmumbcs@itserver6:~/cs240/hw5$ ./tail <tail4.in >tail4.out
+zmumbcs@itserver6:~/cs240/hw5$ cat tail4.out
+12. aid of their country.
+13. Now is the time
+14. for all good men
+15. to come to the
+16. aid of their country.
+17. Now is the time
+18. for all good men
+19. to come to the
+20. aid of their country.
+21. (twice as many lines)
+zmumbcs@itserver6:~/cs240/hw5$ make clean
+rm *.o
+zmumbcs@itserver6:~/cs240/hw5$ ls -l
+total 56
+-rw-r--r-- 1 zmumbcs cs240-1G 1474 Dec  2 13:32 lineholder.c
+-rw-r--r-- 1 zmumbcs cs240-1G  376 Dec  2 13:39 lineholder.h
+-rw-r--r-- 1 zmumbcs cs240-1G  264 Dec  1 19:45 makefile
+-rwxr-xr-x 1 zmumbcs cs240-1G 7948 Dec  2 17:02 tail
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Sep 10 14:09 tail0.in
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Dec  2 17:02 tail0.out
+-rw-r--r-- 1 zmumbcs cs240-1G  145 Dec  2 13:34 tail1.in
+-rw-r--r-- 1 zmumbcs cs240-1G   63 Dec  2 17:02 tail1.out
+-rw-r--r-- 1 zmumbcs cs240-1G  198 Dec  2 13:34 tail2.in
+-rw-r--r-- 1 zmumbcs cs240-1G  198 Dec  2 17:03 tail2.out
+-rw-r--r-- 1 zmumbcs cs240-1G  219 Dec  2 13:34 tail3.in
+-rw-r--r-- 1 zmumbcs cs240-1G   80 Dec  2 17:04 tail3.out
+-rw-r--r-- 1 zmumbcs cs240-1G  447 Nov 26 22:28 tail4.in
+-rw-r--r-- 1 zmumbcs cs240-1G  224 Dec  2 17:04 tail4.out
+-rw-r--r-- 1 zmumbcs cs240-1G  918 Dec  2 13:36 tail.c
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Dec  2 17:01 typescript
+zmumbcs@itserver6:~/cs240/hw5$ exit
+exit
+
+Script done on Mon 02 Dec 2019 05:04:52 PM EST

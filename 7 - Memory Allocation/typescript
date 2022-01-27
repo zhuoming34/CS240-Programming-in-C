@@ -1,0 +1,521 @@
+Script started on Fri 13 Dec 2019 03:33:11 PM EST
+zmumbcs@itserver6:~/cs240/hw7$ ls -l
+total 32
+-rw-r--r-- 1 zmumbcs cs240-1G 11273 Dec 13 15:31 alloc.c
+-rw-r--r-- 1 zmumbcs cs240-1G   457 Nov 26 22:28 alloc.h
+-rw-r--r-- 1 zmumbcs cs240-1G  2315 Nov 26 22:28 alloctest.c
+-rw-r--r-- 1 zmumbcs cs240-1G  2625 Nov 26 22:28 example_script
+-rw-r--r-- 1 zmumbcs cs240-1G   437 Nov 26 22:28 makefile
+-rw-r--r-- 1 zmumbcs cs240-1G  1103 Nov 26 22:28 newtest.in
+-rw-r--r-- 1 zmumbcs cs240-1G     0 Dec 13 15:33 typescript
+zmumbcs@itserver6:~/cs240/hw7$ cat alloc.c
+/*Zhuoming Huang	alloc.c		modified on 12/13/2019*/
+/* Package for free storage allocation:
+   void initalloc()    initialize package
+   char *alloc(int n)  allocate n bytes, longword aligned
+   freef(char *p)      free previously alloc'd bloc
+
+   Patrick O'Neil with help from Betty O'Neil, edited 04/15/00
+   This solution written by Bob Wilson 11/18/2004
+   Updated by Ron Cheung on 5/13/2014 to correct blockr's size in alloc()*/
+
+/* external spec's--just function prototypes for initalloc,
+   alloc and freef--                                                      */
+#include "alloc.h"
+#include <stdio.h>
+
+/* internal def's--hidden from user of package--                          */
+#define ALLOCSIZE 1000          /* size of allocation array               */
+/* tag+size--assumed identical in blockr and blockl-- */
+#define TAGSIZE sizeof(struct blockr)
+/* minimum free block size--a blockl, then a blockr--                      */
+#define MINFREESIZE (sizeof(struct blockl)+sizeof(struct blockr))
+#define FREETAG 0x55            /* 01010101 tag shows block free           */
+#define USEDTAG 0xaa            /* 10101010 tag shows block used           */
+
+static char allocbuf[ALLOCSIZE]; /* storage for allocation                 */
+
+struct blockl {                 /* info on left edge of block              */
+   unsigned int tag : 8;        /* left end tag: free or used              */
+   unsigned int size : 24;      /* length of block in bytes                */
+   struct blockl *nextp;        /* pointer to next free block              */
+   struct blockl *prevp;        /* pointer to previous free block          */
+   };
+struct blockr {                 /* info on right edge of block             */
+   unsigned int tag : 8;        /* right end tag: free or used             */
+   unsigned int size : 24;      /* length of block in bytes                */
+   };
+static struct blockl *freep;    /* head of free chain pointer              */
+static struct blockl *cursorp;  /* cursor position in free chain           */
+static void enchain(struct blockl *p);
+static void unchain(struct blockl *p);
+static void coalesce(struct blockl *blockl1p, struct blockl *blockl2p); 
+void dumpfree(void);
+
+/* initalloc initializes all the structures for later alloc() calls        */
+void initalloc()
+{
+  struct blockr * blockrp;      /* ptr to struct blockr at end of block    */
+
+   cursorp = (freep = (struct blockl *) allocbuf);   /* set cursorp
+      and freep to initial freeblock, which is whole buffer                */
+   freep->tag = FREETAG;        /* tag it as free                          */
+   freep->size = ALLOCSIZE;     /* initial size                            */
+   freep->nextp = freep;        /* one block, points to self               */
+   freep->prevp = freep;        /* ditto                                   */
+    /* now point blockrp to last word of freeblock                         */
+   blockrp = (struct blockr *)(allocbuf + ALLOCSIZE - TAGSIZE);
+   blockrp->tag = FREETAG;      /* as above                                */
+   blockrp->size = ALLOCSIZE;   /* as above                                */
+}
+
+static void enchain(struct blockl *p) /* place block on free chain         */
+{
+   struct blockl *holdp;        /* temporary holder                        */
+
+   holdp = freep;               /* remember old block at head of chain     */
+   freep = p;                   /* place new block on head of chain        */
+    /* update structures to place new block into chain                     */
+   if (holdp == NULL)  {        /* free chain had become empty             */
+     freep->nextp = freep;      /* one block, points to self               */
+     freep->prevp = freep;      /* ditto                                   */
+     cursorp = freep;           /* and cursor pts to this blk              */
+   }
+   else  {                      /* old free chain non-empty                */
+     /* insert on nextp list-- */
+     freep->nextp = holdp;      /* new block points to old block           */
+     holdp->prevp->nextp = freep;  /* end block points to new block        */
+                                /* and insert on prevp list--              */
+     freep->prevp = holdp->prevp;  /* new block points to end block        */
+     holdp->prevp = freep;      /* old block points to new block           */
+   }
+}
+
+static void unchain(struct blockl *p)
+{
+   if (p->prevp == p)           /* prevp points to self?                   */
+      freep = (cursorp = NULL); /* empty list results                      */
+   else  {                      /* chain around p->structl */
+     (p->prevp)->nextp = p->nextp;
+     (p->nextp)->prevp = p->prevp;
+     if (p == cursorp)          /* cursorp was pting to this block?        */
+       cursorp = p->nextp;      /* reset to next free block                */
+     if (p == freep)            /* did we give away *freep ?               */
+       freep = cursorp;         /* point freep to a free block             */
+   }
+}
+
+/* alloc(): find a block of n bytes. Actually, find what might be somewhat 
+   more, allocxize >= n bytes, guaranteed to be longword-aligned, that is,
+   starting on an address which is a multiple of 4, and is at least enough
+   to make up a MINFREESIZE block, long enough to enchain when free. Note
+   that a starting address multiple of 2 would be workable for numeric data
+   on many machines (68000/68020), but a starting address multiple of 4
+   for 32-bit numeric data has faster access characteristics on the 68020  */
+
+char *alloc(int n)              /* return ptr to block of n characters     */
+{
+   struct blockr * blockrp;     /* ptr to struct blockr at end of block    */
+   struct blockl *startp = cursorp,     /* search start in free chain      */
+                 *holdp;        /* another ptr for general use             */
+   int allocsize = 4*((n-1)/4+1)+2*TAGSIZE; /* size of block mult of 4     */
+     /* note - always a multiple of 4, overhead of 2 tag/size blocks       */
+   int newfreesize;             /* may leave a smaller free block behind   */
+   char *p;                     /* for counting off chars in allocbuf      */
+
+   /* look for a first fit for needed allocsize in free chain              */
+
+   if (cursorp == NULL)         /* empty free chain?                       */
+      return NULL;              /* failure to allocate                     */
+
+   /* first make sure allocsize is large enough to enchain when freed      */
+
+   allocsize = (allocsize > MINFREESIZE)? allocsize: MINFREESIZE;
+   /* search for first fit                                                 */
+
+   while (cursorp->size < allocsize   /* not large enough                  */
+     && (cursorp = cursorp->nextp) != startp)   /* more to check?          */
+         ;                            /* try again                         */  
+   if (cursorp->size < allocsize)     /* nothing large enough              
+*/
+      return(NULL);             /* failure to allocate                     */
+
+   /* found block large enough; can we carve off what we need and
+      leave a freeblock?                                                   */
+   if (cursorp->size >= allocsize + MINFREESIZE)  {  /* yes                */
+      newfreesize = cursorp->size - allocsize;  /* size we will leave      */
+      cursorp->size = newfreesize;  /* correct length of free block        */
+
+     /* we will carve off the area to return from right end of free
+        block we're on, so correct chaining for free block we're leaving
+        already exists -- now fix up new left and right end structures     */
+
+      p = (char *) cursorp;     /* need char pointer to count off bytes   */
+      holdp = (struct blockl *) (p+=newfreesize); /* block to return       */
+
+      blockrp = (struct blockr *) (p-TAGSIZE);  /* right end of free block */
+      blockrp->size = newfreesize;   /* set up righthand free blocksize    */
+      blockrp->tag = FREETAG;   /* set up righthand free tag               */
+
+      holdp->tag = USEDTAG;     /* set up lefthand used tag                */
+      holdp->size = allocsize;  /* allocated block size                    */
+      blockrp = (struct blockr *) (p+allocsize-TAGSIZE); /* pt to right end */
+      blockrp->tag = USEDTAG;   /* set tag                                 */
+      blockrp->size = allocsize; /* set allocated block size                */ 
+      return (((char *) holdp) + TAGSIZE); /* return char ptr AFTER tag/size*/
+   }
+   else   {                     /* won't leave a free block behind         */
+      p = (char *) (holdp = cursorp); /* char pointer to current block     */
+      holdp->tag = USEDTAG;     /* setr lefthand tag is used               */
+      unchain(holdp);           /* take it out of the free chain           */
+      blockrp = (struct blockr *) (p+(holdp->size)-TAGSIZE); /* right end  */
+      blockrp->tag = USEDTAG;   /* set tag only for used block             */
+      return(p+TAGSIZE);        /* char ptr AFTER tag/size                 */
+   }
+}
+
+/* free block with user-pointer p (block actually starts at p - TAGSIZE)   */
+void freef(char *p)
+{
+    printf("freef called with p=%p\n", (void *) p);
+
+   /* you write the  code for the freef function here */
+	if((p<allocbuf)||(p>allocbuf+ALLOCSIZE)){
+		printf("freef: bad pointer to block to be freed, %p\n",(void *)p);
+		return;
+	}
+	struct blockl *l = (struct blockl *)(p - TAGSIZE);//beginnig of current block
+	struct blockr *r = (struct blockr *)(p + l->size - 2*TAGSIZE);//blockr of current block
+	if(l->tag == FREETAG && r->tag == FREETAG){
+		printf("freef: block being freed is not in use, %p\n",(void *)p-sizeof(p));
+		return;
+	}
+	struct blockl *s, *o;
+	struct blockr *q;
+	//beginning of left block right tag
+	q = (struct blockr *)(p - 2*TAGSIZE);
+	//beginning of left block
+	s = (struct blockl *)((char*)l - q->size);
+	//beginning of right block
+	o = (struct blockl *)((char*)r + TAGSIZE);
+	
+	r->tag = (l->tag = FREETAG);//mark current block free
+
+	if(q->tag == FREETAG){
+		coalesce(s,l);
+		l = s;	
+	}else{
+		enchain(l);
+	}
+	if(o->tag == FREETAG){
+		unchain(o);
+		coalesce(l,o);
+	}
+
+ }
+
+ /* coalesce two free blocks, left on free list at call, right one not     */
+static void coalesce(struct blockl *blockl1p, struct blockl *blockl2p)
+{
+   struct blockr * blockrp;     /* ptr to struct blockr at end of block    */
+
+   blockl1p->size += blockl2p->size;  /* new size is sum of old two        */
+    /* now point to right end of enlarged new block                        */
+   blockrp = (struct blockr *) (((char *) blockl1p)+blockl1p->size-TAGSIZE);
+   blockrp->size = blockl1p->size;    /* set right end size                */
+}
+
+void dumpfree(void)
+{
+   struct blockl *p = freep;
+
+   if (freep==NULL) printf("empty\n");
+   else
+     do
+       {
+         if (p==cursorp)
+           printf("cursor-> ");
+         else
+           printf("         ");
+         printf("freeblk of size %d at %p (%d from start)\n",p->size, p, (int) ((char *)p - allocbuf));
+       } while ((p=p->nextp)!=freep);
+ } 
+zmumbcs@itserver6:~/cs240/hw7$ cat alloctest.c
+/*********************************************************************
+ *
+ *                            alloctest
+ *
+ *	       interactive driver for storage allocator
+ *
+ *  Ethan Bolker
+ *  CS240
+ *  Fall 1988
+ *  edited by Betty O'Neil Spring 1989, Spring 1990, Spring 2000
+ *  edited by Bob Wilson Fall 2004
+ *
+ ********************************************************************/
+
+/* 
+ * commands are
+ *
+ *    #      comment line
+ *    a n  # call p = alloc(n), print p and save it in new slot in holdp
+ *    f n  # call freef(n), where n is slot# of saved ptr in holdp
+ *    d    # debug dump of free list (temp service, removed at end)
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "alloc.h"
+
+#define MAXSTR 100
+#define ALLOC 'a'
+#define FREE  'f'
+#define DEBUGDUMP 'd'
+#define COM   '#'
+#define QUIT  'q'
+
+char prompt[]= "> ";
+
+void instruct(void);
+int main(void);
+/**************************************************************************/
+
+int main()
+{
+
+  char line[MAXSTR];
+  char command;
+  int n;
+  char * holdp[100];
+  int holdindex=0;		/* in holdp */
+  int done=0;
+
+  for (n = 0; n < 100; n++)	/* clear pointer holding array */
+        holdp[n] = NULL;
+  
+  instruct();
+  initalloc();
+  printf("%s",prompt);
+  while (!done && fgets( line, MAXSTR, stdin) != NULL) {
+    printf("%s", line);
+    command = line[0];
+    switch (command) {
+    case ALLOC: 
+      n = atoi(line+1);
+      holdp[holdindex++] = alloc(n);
+      printf("alloc #%d returned pointer: %p\n",
+	     holdindex-1,holdp[holdindex-1]);
+      break;
+    case FREE: 
+      n = atoi(line+1);
+      freef(holdp[n]);
+      break;
+    case DEBUGDUMP: 
+      dumpfree();
+      break;
+    case COM:
+      break;
+    case QUIT:  
+      done=1;
+      break;
+    default:
+      fprintf(stderr, "unknown command -%c-\n", command);
+    }
+    if (!done) printf("%s",prompt);
+  }
+  putchar('\n');
+  return(0);
+}
+
+void instruct() 
+{
+  printf("interactive driver for testing storage allocator - commands are\n");
+  printf("\n");    
+  printf("   #      comment line\n");
+  printf("   a n  # call p = alloc(n), print p and save in new slot in holdp\n");
+  printf("   f n  # call freef(holdp[n]), i.e. free nth-obtained block\n");
+  printf("   d    # dump free list (temp debugging aid)\n");
+  printf("   q    # quit\n");
+  printf("\n");    
+}
+
+zmumbcs@itserver6:~/cs240/hw7$ cat alloc.h
+/* alloc.h: external specs for alloc/freef package */
+
+/* call this once before any alloc()'s */
+void initalloc(void);
+
+/* allocate a block of n bytes of memory and return its address, guaranteed
+ * to be a multiple of 4 ("4-byte-aligned") to make sure that the
+ * provided address can be used as an int * pointer for 32-bit ints.
+ */
+char *alloc(int n);
+
+/* free a previously alloc'd block */
+void freef(char *p);
+
+/* for debugging */
+void dumpfree(void);
+zmumbcs@itserver6:~/cs240/hw7$ cat makefile
+# makefile for building cs240 alloc project programs using the 
+# tell make to use gcc as C compiler, -m32 -g -W... for C compiler flags--
+# check "man gcc" to find out what -W flags do
+CC = gcc
+OBJS = alloctest.o alloc.o
+CFLAGS = -m32
+
+alloctest:  $(OBJS)
+	$(CC) $(CFLAGS) -o alloctest $(OBJS)
+
+# make knows to use $(CC) and $(CFLAGS)	
+alloctest.o: alloctest.c alloc.h
+alloc.o: alloc.c alloc.h
+
+clean:
+	rm -f *.o core
+
+zmumbcs@itserver6:~/cs240/hw7$ cat newtest.in
+# test cases for alloc and freef
+#
+# first dump initial state of allocbuf
+d
+# free a null pointer to see if free checks for this error
+f 0
+# allocate a block of 92 (uses 100 bytes with the overhead)
+a 92
+# allocate a block of 92 (uses 100 bytes with the overhead)
+a 92
+# allocate a block of 92 (uses 100 bytes with the overhead)
+a 92
+# dump current state of allocbuf to show how much is left
+d
+# allocate a block using up all of the remaining memory
+a 692
+# dump current state of allocbuf to show it's empty
+d
+# try to allocate another block (should fail)
+a 92
+# free a block that is between two blocks in use
+f 1
+# dump current state of allocbuf
+d
+# free a block at bottom of allocbuf with an inuse block above it
+f 3
+# dump current state of allocbuf
+d
+# free a block with free blocks above and below it
+f 2
+# dump current state of allocbuf to show effect of coalesce
+d
+# free last block at top of allocbuf with a free block below it
+f 0
+# try to free a block that is not in use any longer (should fail)
+f 0
+# dump final state of allocbuf which should be same as initial state
+d
+# and quit the test
+q
+
+zmumbcs@itserver6:~/cs240/hw7$ make
+gcc -m32   -c -o alloctest.o alloctest.c
+gcc -m32   -c -o alloc.o alloc.c
+gcc -m32 -o alloctest alloctest.o alloc.o
+zmumbcs@itserver6:~/cs240/hw7$ ./alloctest <newtest.in
+interactive driver for testing storage allocator - commands are
+
+   #      comment line
+   a n  # call p = alloc(n), print p and save in new slot in holdp
+   f n  # call freef(holdp[n]), i.e. free nth-obtained block
+   d    # dump free list (temp debugging aid)
+   q    # quit
+
+> # test cases for alloc and freef
+> #
+> # first dump initial state of allocbuf
+> d
+cursor-> freeblk of size 1000 at 0x804b080 (0 from start)
+> # free a null pointer to see if free checks for this error
+> f 0
+freef called with p=(nil)
+freef: bad pointer to block to be freed, (nil)
+> # allocate a block of 92 (uses 100 bytes with the overhead)
+> a 92
+alloc #0 returned pointer: 0x804b408
+> # allocate a block of 92 (uses 100 bytes with the overhead)
+> a 92
+alloc #1 returned pointer: 0x804b3a4
+> # allocate a block of 92 (uses 100 bytes with the overhead)
+> a 92
+alloc #2 returned pointer: 0x804b340
+> # dump current state of allocbuf to show how much is left
+> d
+cursor-> freeblk of size 700 at 0x804b080 (0 from start)
+> # allocate a block using up all of the remaining memory
+> a 692
+alloc #3 returned pointer: 0x804b084
+> # dump current state of allocbuf to show it's empty
+> d
+empty
+> # try to allocate another block (should fail)
+> a 92
+alloc #4 returned pointer: (nil)
+> # free a block that is between two blocks in use
+> f 1
+freef called with p=0x804b3a4
+> # dump current state of allocbuf
+> d
+cursor-> freeblk of size 100 at 0x804b3a0 (800 from start)
+> # free a block at bottom of allocbuf with an inuse block above it
+> f 3
+freef called with p=0x804b084
+> # dump current state of allocbuf
+> d
+         freeblk of size 700 at 0x804b080 (0 from start)
+cursor-> freeblk of size 100 at 0x804b3a0 (800 from start)
+> # free a block with free blocks above and below it
+> f 2
+freef called with p=0x804b340
+> # dump current state of allocbuf to show effect of coalesce
+> d
+cursor-> freeblk of size 900 at 0x804b080 (0 from start)
+> # free last block at top of allocbuf with a free block below it
+> f 0
+freef called with p=0x804b408
+> # try to free a block that is not in use any longer (should fail)
+> f 0
+freef called with p=0x804b408
+freef: block being freed is not in use, 0x804b404
+> # dump final state of allocbuf which should be same as initial state
+> d
+cursor-> freeblk of size 1000 at 0x804b080 (0 from start)
+> # and quit the test
+> q
+
+zmumbcs@itserver6:~/cs240/hw7$ ./alloctest <newtest.in >newtest.out
+zmumbcs@itserver6:~/cs240/hw7$ diff -w newtest.out example_script
+0a1,2
+> Script started on Mon 12 Dec 2016 09:19:31 PM EST
+> cheungr@itserver6:~/personal/hw7_old/solution$ ./alloctest <newtest.in
+70a73,76
+> cheungr@itserver6:~/personal/hw7_old/solution$ exit
+> exit
+> 
+> Script done on Mon 12 Dec 2016 09:19:51 PM EST
+zmumbcs@itserver6:~/cs240/hw7$ make clean
+rm -f *.o core
+zmumbcs@itserver6:~/cs240/hw7$ ls -l
+total 48
+-rw-r--r-- 1 zmumbcs cs240-1G 11273 Dec 13 15:31 alloc.c
+-rw-r--r-- 1 zmumbcs cs240-1G   457 Nov 26 22:28 alloc.h
+-rwxr-xr-x 1 zmumbcs cs240-1G 12040 Dec 13 15:33 alloctest
+-rw-r--r-- 1 zmumbcs cs240-1G  2315 Nov 26 22:28 alloctest.c
+-rw-r--r-- 1 zmumbcs cs240-1G  2625 Nov 26 22:28 example_script
+-rw-r--r-- 1 zmumbcs cs240-1G   437 Nov 26 22:28 makefile
+-rw-r--r-- 1 zmumbcs cs240-1G  1103 Nov 26 22:28 newtest.in
+-rw-r--r-- 1 zmumbcs cs240-1G  2326 Dec 13 15:33 newtest.out
+-rw-r--r-- 1 zmumbcs cs240-1G     0 Dec 13 15:33 typescript
+zmumbcs@itserver6:~/cs240/hw7$ exit
+exit
+
+Script done on Fri 13 Dec 2019 03:34:25 PM EST

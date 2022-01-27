@@ -1,0 +1,374 @@
+Script started on Wed 09 Oct 2019 08:33:22 PM EDT
+zmumbcs@itserver6:~/cs240/hw2$ ls -l
+total 36
+-rw-r--r-- 1 zmumbcs cs240-1G 2672 Oct  9 20:30 hist.c
+-rw-r--r-- 1 zmumbcs cs240-1G 1415 Sep 24 14:15 hw2_sample_output.txt
+-rw-r--r-- 1 zmumbcs cs240-1G  869 Oct  6 23:04 reverse.c
+-rw-r--r-- 1 zmumbcs cs240-1G  268 Sep 24 14:15 reverse.in
+-rw-r--r-- 1 zmumbcs cs240-1G 1000 Oct  6 23:18 trim.c
+-rw-r--r-- 1 zmumbcs cs240-1G   94 Sep 24 14:15 trim.in
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Oct  9 20:33 typescript
+-rw-r--r-- 1 zmumbcs cs240-1G 1530 Sep 24 14:15 visitype.c
+-rw-r--r-- 1 zmumbcs cs240-1G 2066 Oct  8 16:39 vt.c
+-rw-r--r-- 1 zmumbcs cs240-1G   12 Oct  8 16:07 vt.in
+zmumbcs@itserver6:~/cs240/hw2$ cat trim.c
+/* name:Zhuoming Huang
+   date: 09/26/2019
+   file: trim.c
+*/
+
+#include <stdio.h>
+#define MAXLINE 1000
+
+int my_getline(char line[], int maxline);
+
+int main(void){
+        int len,i;
+        char line[MAXLINE];
+/*pseude code for the trim program
+while there is another line
+        for each character starting at the end of the line
+                 find the first non blank character of the line
+                if a non-blank character is found
+                        add an eof and terminating zero
+                        and print it out
+end of pseudo code
+*/
+
+        while((len=my_getline(line,MAXLINE)) > 0){
+		for(i=len-2;i>0;i--){
+        	        if (line[i]!=' ' && line[i]!='\t' && line[i]!='\n'){
+				line[i+1] = '\n';
+				line[i+2] = '\0';
+				printf("%s",line);
+				break;
+			}
+		}
+	}
+	return 0;
+}
+
+int my_getline(char s[], int lim){
+	int c, i;
+	for (i=0; i<lim-1 && (c=getchar())!=EOF && c!='\n'; ++i)
+		s[i] = c;
+	if (c == '\n'){
+		s[i] = c;
+		++i;
+	}
+	s[i] = '\0';
+	return i;
+} 
+	
+zmumbcs@itserver6:~/cs240/hw2$ cat reverse.c
+/*name: Zhuoming Huang
+  date: 10/01/2019
+  file: reverse.c
+*/
+#include <stdio.h>
+#define MAXLINE 1000
+
+int my_getline(char s[],int lim);
+
+int main(void){
+
+	int len,i;
+	char line[MAXLINE],c;
+
+/* pseudo code for reverse function
+
+	find length of the string to reverse
+	for each character from the beginning of the string to half way
+		copy the character here to a holding variable
+		copy the character the same distance from end to here
+		copy the holding variable to the same distance from end
+
+end of pseudo code
+*/
+	while ((len=my_getline(line,MAXLINE))>0){
+		for (i=0;i<(len/2-1);i++){
+			c=line[i];
+			line[i]=line[len-2-i];
+			line[len-2-i]=c;
+		}
+		printf("%s",line);
+	}	
+	return 0;
+}
+
+int my_getline(char s[],int lim){
+	int c,i;
+	for(i=0;i<lim-1 && (c=getchar())!=EOF && c!='\n';++i)
+		s[i] = c;
+	if (c == '\n'){
+		s[i] = c;
+		++i;
+	}
+	s[i] = '\0';
+	return i;
+}
+zmumbcs@itserver6:~/cs240/hw2$ cat vt.c
+/* name: Zhuoming Huang
+   date: 10/03/2019
+   file: vt.c
+*/
+
+#include <stdio.h>
+#define MAXLINE 1000
+
+int my_getline(char s[], int lim);
+
+int main(void){
+	int i,len;
+	char line[MAXLINE],asciiname[] =
+         "NUL\0"  "SOH\0"  "STX\0"  "ETX\0"  "EOT\0"  "ENQ\0"  "ACK\0"  "BEL\0"
+         " BS\0"  " HT\0"  " NL\0"  " VT\0"  " NP\0"  " CR\0"  " SO\0"  " SI\0"
+         "DLE\0"  "DC1\0"  "DC2\0"  "DC3\0"  "DC4\0"  "NAK\0"  "SYN\0"  "ETB\0"
+         "CAN\0"  " EM\0"  "SUB\0"  "ESC\0"  " FS\0"  " GS\0"  " RS\0"  " VS\0"
+         " SP\0"  "  !\0"  "  \"\0" "  #\0"  "  $\0"  "  %\0"  "  &\0"  "  '\0"
+         "  (\0"  "  )\0"  "  *\0"  "  +\0"  "  ,\0"  "  -\0"  "  .\0"  "  /\0"
+         "  0\0"  "  1\0"  "  2\0"  "  3\0"  "  4\0"  "  5\0"  "  6\0"  "  7\0"
+         "  8\0"  "  9\0"  "  :\0"  "  ;\0"  "  <\0"  "  =\0"  "  >\0"  "  ?\0"
+         "  @\0"  "  A\0"  "  B\0"  "  C\0"  "  D\0"  "  E\0"  "  F\0"  "  G\0"
+         "  H\0"  "  I\0"  "  J\0"  "  K\0"  "  L\0"  "  M\0"  "  N\0"  "  O\0"
+         "  P\0"  "  Q\0"  "  R\0"  "  S\0"  "  T\0"  "  U\0"  "  V\0"  "  W\0"
+         "  X\0"  "  Y\0"  "  Z\0"  "  [\0"  "  \\\0" "  ]\0"  "  ^\0"  "  _\0"
+         "  `\0"  "  a\0"  "  b\0"  "  c\0"  "  d\0"  "  e\0"  "  f\0"  "  g\0"
+         "  h\0"  "  i\0"  "  j\0"  "  k\0"  "  l\0"  "  m\0"  "  n\0"  "  o\0"
+         "  p\0"  "  q\0"  "  r\0"  "  s\0"  "  t\0"  "  u\0"  "  v\0"  "  w\0"
+         "  x\0"  "  y\0"  "  z\0"  "  {\0"  "  |\0"  "  }\0"  "  ~\0"  "DEL\0"
+         ;
+	/*pseudo code for vt program
+		while a line is read
+			for all elements in this line
+				print its ascii name and value in hex
+	end of pseudo code
+	*/
+	while ( (len = my_getline(line,MAXLINE))>0){
+		for (i=0; i<len; ++i){	
+			printf("%s,  %x\n", &asciiname[4*line[i]],line[i]);
+        	}
+	}
+
+	return 0;
+}
+
+int my_getline(char s[], int lim){
+        int c, i;
+        for (i=0; i<lim-1 && (c=getchar())!=EOF && c!='\n'; ++i)
+                s[i] = c;
+        if (c == '\n'){
+                s[i] = c;
+                ++i;
+        }
+        s[i] = '\0';
+        return i;
+}
+zmumbcs@itserver6:~/cs240/hw2$ cat hist.c
+/*	Zhuoming Huang
+	10/05/2019
+	hist.c
+*/
+#include <stdio.h>
+#define MAXLINE 1000
+
+int my_getline(char s[], int lim);
+
+int main(void){
+        int i,j,k,len,total[128]={0};
+        char line[MAXLINE],asciiname[] =
+         "NUL\0"  "SOH\0"  "STX\0"  "ETX\0"  "EOT\0"  "ENQ\0"  "ACK\0"  "BEL\0"
+         " BS\0"  " HT\0"  " NL\0"  " VT\0"  " NP\0"  " CR\0"  " SO\0"  " SI\0"
+         "DLE\0"  "DC1\0"  "DC2\0"  "DC3\0"  "DC4\0"  "NAK\0"  "SYN\0"  "ETB\0"
+         "CAN\0"  " EM\0"  "SUB\0"  "ESC\0"  " FS\0"  " GS\0"  " RS\0"  " VS\0"
+         " SP\0"  "  !\0"  "  \"\0" "  #\0"  "  $\0"  "  %\0"  "  &\0"  "  '\0"
+         "  (\0"  "  )\0"  "  *\0"  "  +\0"  "  ,\0"  "  -\0"  "  .\0"  "  /\0"
+         "  0\0"  "  1\0"  "  2\0"  "  3\0"  "  4\0"  "  5\0"  "  6\0"  "  7\0"
+         "  8\0"  "  9\0"  "  :\0"  "  ;\0"  "  <\0"  "  =\0"  "  >\0"  "  ?\0"
+         "  @\0"  "  A\0"  "  B\0"  "  C\0"  "  D\0"  "  E\0"  "  F\0"  "  G\0"
+         "  H\0"  "  I\0"  "  J\0"  "  K\0"  "  L\0"  "  M\0"  "  N\0"  "  O\0"
+         "  P\0"  "  Q\0"  "  R\0"  "  S\0"  "  T\0"  "  U\0"  "  V\0"  "  W\0"
+         "  X\0"  "  Y\0"  "  Z\0"  "  [\0"  "  \\\0" "  ]\0"  "  ^\0"  "  _\0"
+         "  `\0"  "  a\0"  "  b\0"  "  c\0"  "  d\0"  "  e\0"  "  f\0"  "  g\0"
+         "  h\0"  "  i\0"  "  j\0"  "  k\0"  "  l\0"  "  m\0"  "  n\0"  "  o\0"
+         "  p\0"  "  q\0"  "  r\0"  "  s\0"  "  t\0"  "  u\0"  "  v\0"  "  w\0"
+         "  x\0"  "  y\0"  "  z\0"  "  {\0"  "  |\0"  "  }\0"  "  ~\0"  "DEL\0"
+         ;
+        /*pseudo code for hist program
+                while a line is read
+                        for all char in this line
+				check if a char has been counted
+                               		if not counted yet
+						count amount for this char
+		count number of char for all inputs
+		print value in DEX and HEX, ascii name, and amount of each char
+        end of pseudo code
+        */
+	  printf("DEC  HEX  ASCII  COUNT\n");
+	  printf("           NAME       \n");
+        while ( (len = my_getline(line,MAXLINE))>0){
+		int count[128]={0};
+                for (i=0; i<len; ++i){
+				k = 0;
+				if (count[line[i]] != 0)
+				continue;
+				for (j=0;j<len;++j){
+					if (line[j] == line[i])
+						k++;	
+				}
+				count[line[i]]+=k;
+				total[line[i]]+=k;
+			}
+	   }
+		for(i=0; i<128; ++i){
+			if (total[i] != 0)	
+				printf("%3.d  %3.x    %s     %d\n",i,i, &asciiname[4*i],total[i]);
+		}
+        return 0;
+}
+
+int my_getline(char s[], int lim){
+        int c, i;
+        for (i=0; i<lim-1 && (c=getchar())!=EOF && c!='\n'; ++i)
+                s[i] = c;
+        if (c == '\n'){
+                s[i] = c;
+                ++i;
+        }
+        s[i] = '\0';
+        return i;
+}	
+zmumbcs@itserver6:~/cs240/hw2$ gcc -m32 trim.c -o trim
+zmumbcs@itserver6:~/cs240/hw2$ gcc -m32 reverse.c -o reverse
+zmumbcs@itserver6:~/cs240/hw2$ gcc -m32 vt.c -o vt
+zmumbcs@itserver6:~/cs240/hw2$ gcc -m32 hist.c -o hist
+zmumbcs@itserver6:~/cs240/hw2$ ./trim <trim.in >trim.out
+zmumbcs@itserver6:~/cs240/hw2$ od -x trim.in
+0000000 0909 6f4e 2077 7369 7420 6568 2020 2020
+0000020 2020 0a20 0909 6954 656d 6620 726f 0909
+0000040 090a 6109 6c6c 6720 6f6f 2064 656d 206e
+0000060 6f74 2020 2020 090a 6309 6d6f 2065 6f74
+0000100 7420 6568 6120 6469 6f20 2066 6874 2065
+0000120 6170 7472 2e79 2020 2020 2020 0a0a
+0000136
+zmumbcs@itserver6:~/cs240/hw2$ od -x trim.out
+0000000 0909 6f4e 2077 7369 7420 6568 090a 5409
+0000020 6d69 2065 6f66 0a72 0909 6c61 206c 6f67
+0000040 646f 6d20 6e65 7420 0a6f 0909 6f63 656d
+0000060 7420 206f 6874 2065 6961 2064 666f 7420
+0000100 6568 7020 7261 7974 0a2e
+0000112
+zmumbcs@itserver6:~/cs240/hw2$ ./reverse <reverse.in >reverse.out
+zmumbcs@itserver6:~/cs240/hw2$ cat reverse.in
+Have you heard of palindromes?
+
+In the garden of Eden, on meeting:
+
+"Madam, I'm Adam."
+
+Napoleon on his capability after his first defeat:
+
+"Able was I ere I saw Elba."
+
+And of course, on diet:
+
+"Doc, note: I dissent! A fast never prevents a fatness. I diet on cod."
+
+zmumbcs@itserver6:~/cs240/hw2$ cat reverse.out
+?semordnilap f odraeh uoy evaH
+
+:gniteem no ,ned Efo nedrag eht nI
+
+".madA mI' ,madaM"
+
+:taefed tsrif sih retfa tyilibapac sih no noelopaN
+
+".ablE was I ree I saw elbA"
+
+:teid no ,esruoc fo dnA
+
+".doc no teid I .ssentaf a stneverp reven tsaf A !tnessid I :eton ,coD"
+
+zmumbcs@itserver6:~/cs240/hw2$ ./vt <vt.in >vt.out
+zmumbcs@itserver6:~/cs240/hw2$ od --endian=big -x vt.in
+0000000 0102 7d7e 612c 627a 5c7f 5a0a
+0000014
+zmumbcs@itserver6:~/cs240/hw2$ cat vt.out
+SOH,  1
+STX,  2
+  },  7d
+  ~,  7e
+  a,  61
+  ,,  2c
+  b,  62
+  z,  7a
+  \,  5c
+DEL,  7f
+  Z,  5a
+ NL,  a
+zmumbcs@itserver6:~/cs240/hw2$ ./hist <trim.in
+DEC  HEX  ASCII  COUNT
+           NAME       
+  9    9     HT     10
+ 10    a     NL     5
+ 32   20     SP     29
+ 46   2e      .     1
+ 78   4e      N     1
+ 84   54      T     1
+ 97   61      a     3
+ 99   63      c     1
+100   64      d     2
+101   65      e     6
+102   66      f     2
+103   67      g     1
+104   68      h     3
+105   69      i     3
+108   6c      l     2
+109   6d      m     3
+110   6e      n     1
+111   6f      o     8
+112   70      p     1
+114   72      r     2
+115   73      s     1
+116   74      t     6
+119   77      w     1
+121   79      y     1
+zmumbcs@itserver6:~/cs240/hw2$ ./hist <vt.in
+DEC  HEX  ASCII  COUNT
+           NAME       
+  1    1    SOH     1
+  2    2    STX     1
+ 10    a     NL     1
+ 44   2c      ,     1
+ 90   5a      Z     1
+ 92   5c      \     1
+ 97   61      a     1
+ 98   62      b     1
+122   7a      z     1
+125   7d      }     1
+126   7e      ~     1
+127   7f    DEL     1
+zmumbcs@itserver6:~/cs240/hw2$ ls -l
+total 80
+-rwxr-xr-x 1 zmumbcs cs240-1G 7500 Oct  9 20:34 hist
+-rw-r--r-- 1 zmumbcs cs240-1G 2672 Oct  9 20:30 hist.c
+-rw-r--r-- 1 zmumbcs cs240-1G 1415 Sep 24 14:15 hw2_sample_output.txt
+-rwxr-xr-x 1 zmumbcs cs240-1G 7468 Oct  9 20:34 reverse
+-rw-r--r-- 1 zmumbcs cs240-1G  869 Oct  6 23:04 reverse.c
+-rw-r--r-- 1 zmumbcs cs240-1G  268 Sep 24 14:15 reverse.in
+-rw-r--r-- 1 zmumbcs cs240-1G  268 Oct  9 20:35 reverse.out
+-rwxr-xr-x 1 zmumbcs cs240-1G 7464 Oct  9 20:34 trim
+-rw-r--r-- 1 zmumbcs cs240-1G 1000 Oct  6 23:18 trim.c
+-rw-r--r-- 1 zmumbcs cs240-1G   94 Sep 24 14:15 trim.in
+-rw-r--r-- 1 zmumbcs cs240-1G   74 Oct  9 20:34 trim.out
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Oct  9 20:33 typescript
+-rw-r--r-- 1 zmumbcs cs240-1G 1530 Sep 24 14:15 visitype.c
+-rwxr-xr-x 1 zmumbcs cs240-1G 7460 Oct  9 20:34 vt
+-rw-r--r-- 1 zmumbcs cs240-1G 2066 Oct  8 16:39 vt.c
+-rw-r--r-- 1 zmumbcs cs240-1G   12 Oct  8 16:07 vt.in
+-rw-r--r-- 1 zmumbcs cs240-1G  105 Oct  9 20:36 vt.out
+zmumbcs@itserver6:~/cs240/hw2$ exit
+exit
+
+Script done on Wed 09 Oct 2019 08:37:17 PM EDT
+

@@ -1,0 +1,76 @@
+Script started on Mon 12 Dec 2016 09:19:31 PM EST
+cheungr@itserver6:~/personal/hw7_old/solution$ ./alloctest <newtest.in
+interactive driver for testing storage allocator - commands are
+
+   #      comment line
+   a n  # call p = alloc(n), print p and save in new slot in holdp
+   f n  # call freef(holdp[n]), i.e. free nth-obtained block
+   d    # dump free list (temp debugging aid)
+   q    # quit
+
+> # test cases for alloc and freef
+> #
+> # first dump initial state of allocbuf
+> d
+cursor-> freeblk of size 1000 at 0x804b080 (0 from start)
+> # free a null pointer to see if free checks for this error
+> f 0
+freef called with p=(nil)
+freef: bad pointer to block to be freed, (nil)
+> # allocate a block of 92 (uses 100 bytes with the overhead)
+> a 92
+alloc #0 returned pointer: 0x804b408
+> # allocate a block of 92 (uses 100 bytes with the overhead)
+> a 92
+alloc #1 returned pointer: 0x804b3a4
+> # allocate a block of 92 (uses 100 bytes with the overhead)
+> a 92
+alloc #2 returned pointer: 0x804b340
+> # dump current state of allocbuf to show how much is left
+> d
+cursor-> freeblk of size 700 at 0x804b080 (0 from start)
+> # allocate a block using up all of the remaining memory
+> a 692
+alloc #3 returned pointer: 0x804b084
+> # dump current state of allocbuf to show it's empty
+> d
+empty
+> # try to allocate another block (should fail)
+> a 92
+alloc #4 returned pointer: (nil)
+> # free a block that is between two blocks in use
+> f 1
+freef called with p=0x804b3a4
+> # dump current state of allocbuf
+> d
+cursor-> freeblk of size 100 at 0x804b3a0 (800 from start)
+> # free a block at bottom of allocbuf with an inuse block above it
+> f 3
+freef called with p=0x804b084
+> # dump current state of allocbuf
+> d
+         freeblk of size 700 at 0x804b080 (0 from start)
+cursor-> freeblk of size 100 at 0x804b3a0 (800 from start)
+> # free a block with free blocks above and below it
+> f 2
+freef called with p=0x804b340
+> # dump current state of allocbuf to show effect of coalesce
+> d
+cursor-> freeblk of size 900 at 0x804b080 (0 from start)
+> # free last block at top of allocbuf with a free block below it
+> f 0
+freef called with p=0x804b408
+> # try to free a block that is not in use any longer (should fail)
+> f 0
+freef called with p=0x804b408
+freef: block being freed is not in use, 0x804b404
+> # dump final state of allocbuf which should be same as initial state
+> d
+cursor-> freeblk of size 1000 at 0x804b080 (0 from start)
+> # and quit the test
+> q
+
+cheungr@itserver6:~/personal/hw7_old/solution$ exit
+exit
+
+Script done on Mon 12 Dec 2016 09:19:51 PM EST

@@ -1,0 +1,110 @@
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#define MAX 15
+
+typedef struct word word;
+
+struct word{
+	int count;
+	char character[MAX];	
+	word * previous_word;
+	word * next_word;
+};
+
+void string_copy(char *, char *, int);
+int string_comp(char *, char *, int);
+
+/*all following functions have input argument of first_word, which is the entrance of the linked list.*/
+word * add_word(word *, char *, int);
+word * find_word(word *, char *, int);
+word * adjust_word(word *, word *);
+word * append_word(word *, char *, int);
+
+int main(void){
+
+	char str[MAX];
+	int str_len;
+
+	/* Use while loop and c = getchar() to read every character from the input
+		if the character is neither a-z nor A-Z, 
+			if str_len != 0, str[] has the new word.
+				add_word(first_word, str, str_len)
+				str_len = 0;
+			If str_len ==0, continue
+		str[str_len++] = c
+	*/
+
+	/* Use while loop to print
+		while(first_word){
+			print firstword
+			temp = first_word->next_word;
+			free(first_word);
+			first_word = temp;
+		}
+	*/
+	return 0;
+}
+
+word * add_word(word * first_word, char * str, int str_len){
+	/*	
+		if first_word == NULL
+			malloc new space for first_word.
+			copy str to first_word
+			count = 1
+			first_word->previous_word=NULL
+			first_word->next_word=NULL
+			return first_word
+		else
+			if adjusted_word = find_word(first_word, str, str_len)
+				return adjust_word(first_word, adjusted_word)
+				this means the word already exists in the linked list, the find function returns the pointer that points at the word.
+			else
+				return append_word(first_word, str, str_len)
+				this means the word does not exist in the linked list. 
+	*/
+}
+
+word * find_word(word * first_word, char * str, int str_len){
+	/*
+		temp = first_word
+		do a while loop starting from first_word.
+		keep checking if str  == temp - >character
+		temp = temp-> next_word
+
+		Return NULL, if not find it
+		Do temp->count++, return the temp, if find it.
+
+	*/
+}
+
+word * adjust_word(word * first_word, word * adjusted_word){
+	/*
+		This is the hardest part.
+		Since the adjusted_word’s count has been increased by 1, the adjusted_word’s count may be larger then the next ones, a swap needs to be done to put the adjusted_word in the right place. Be careful, if the adjusted_word is the first_word before adjustment, the first_word may be updated. 
+
+		return first_word
+	*/
+}
+
+word * append_word(word * first_word, char * str, int str_len){
+	/*
+		This is an easy step. You just need to create a new struct word new_word
+		malloc for new_word
+		save str to new_word
+		new_word->next_word = first_word;
+		new_word->previous_word = NULL;
+		first_word->previous_word = new_word;
+		return new_word; making new_word the new first_word
+	*/
+}
+
+void string_copy (char * str1, char * str2, int len){
+	// copy str2 to str1
+}
+
+int string_comp(char * str1, char * str2, int len){
+	// return 0 if they are different strings
+	// return 1 if they are the same
+}

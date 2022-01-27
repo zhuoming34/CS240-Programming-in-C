@@ -1,0 +1,217 @@
+Script started on Fri 25 Oct 2019 11:03:46 PM EDT
+zmumbcs@itserver6:~/cs240/hw3$ ls -l
+total 12
+-rw-r--r-- 1 zmumbcs cs240-1G  490 Oct 25 23:00 showxbits.c
+-rw-r--r-- 1 zmumbcs cs240-1G    0 Oct 25 23:03 typescript
+-rw-r--r-- 1 zmumbcs cs240-1G 1127 Oct 25 23:01 xbits.c
+-rw-r--r-- 1 zmumbcs cs240-1G  802 Oct 25 23:01 xbits.h
+zmumbcs@itserver6:~/cs240/hw3$ cat showxbits.c
+/*Zhuoming Huang
+  10/22/2019
+  showxbits.c
+*/
+/*
+ *  stub driver for functions to study integer-hex conversions
+ *
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include "xbits.h"
+
+#define ENOUGH_SPACE 1000 /* not really enough space */
+
+int main() {
+  char hexstring[ENOUGH_SPACE];
+  int m=0, n;
+  while(scanf("%d",&n)==1){
+  itox(hexstring, n);
+  m= xtoi(hexstring);
+  printf("%12d %s %12d\n", n,hexstring, m);
+  }
+  return 0;  /* everything is just fine */
+}
+
+
+zmumbcs@itserver6:~/cs240/hw3$ cat xbits.c
+/* Zhuoming Huang 10/22/2019 xbits.c */
+/*
+ *  stubs for functions to study
+ *  integer-hex conversions
+ *
+ */
+
+#include <stdio.h>
+#include "xbits.h"
+
+/* function represents the int n as a hexstring which it places in the
+hexstring array */
+
+void itox(char hexstring[], int n) {
+   printf("in itox, processing %d\n",n);
+	int i,rmd,quo=n,len=0;
+	char c;
+	for (i=0;quo>0;i++){
+		rmd = quo%16;
+		quo = quo/16;
+		if (rmd>9)
+			rmd += 55;
+		else
+			rmd += 48;
+		hexstring[i]=rmd;
+		hexstring[i+1]='\0';
+		len++;
+	}
+	for (i=0;i<len/2;i++){
+		c = hexstring[i];
+                hexstring[i]=hexstring[len-i-1];
+                hexstring[len-i-1]=c;
+        }
+}
+
+/* function converts hexstring array to equivalent integer value  */
+
+int xtoi( char hexstring[]) {
+  printf("in xtoi, processing %s\n", hexstring);
+	int i,len=0,num,sum=0,weight;
+	char c;
+	for(i=0;hexstring[i]!='\0';i++)
+		len++;
+	for(i=len-1,weight=1;hexstring[i]!='\0';i--,weight*=16){
+		if (hexstring[i]<58)
+			num = hexstring[i]-48;
+		else
+			num = hexstring[i]-55;
+		num *= weight;
+		sum += num;
+	}
+	return sum;
+}
+zmumbcs@itserver6:~/cs240/hw3$ cat xbits.h
+/*Zhuoming Huang 10/22/2019 xbits.h*/
+/* header file for hw3 
+ *
+ *  functional prototypes for functions to study
+ *  integer-hex conversions
+ *
+ *	modified by Ron Cheung sum'05
+ */
+
+/* function returns in hexstring the char sequence of hex digits
+ * '0' ... 'F' used to represent int n. It is the caller's responsibility
+ * to have allocated at least 1+2*sizeof(int) positions in bitstring.
+ * itox must provide the concluding \0 in bitstring.
+ */
+void itox(char hexstring[], int n); /* source on right, target on left */
+
+
+
+/* function returns in integer the decimal representation of
+ * the hex characters in hexstring. The function needs to check if hexstring
+ * contains only the characters '0' ... 'F'.
+ */
+int xtoi(char hexstring[]); /* return the converted integer */ 
+
+zmumbcs@itserver6:~/cs240/hw3$ gcc -m32 showxbits.c xbits.c -o showxbits  -g
+zmumbcs@itserver6:~/cs240/hw3$ gdb ./showxbits
+GNU gdb (Ubuntu 7.11.1-0ubuntu1~16.5) 7.11.1
+Copyright (C) 2016 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+<http://www.gnu.org/software/gdb/documentation/>.
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from ./showxbits...done.
+(gdb) b main
+Breakpoint 1 at 0x80484cf: file showxbits.c, line 16.
+(gdb) r
+Starting program: /courses/cs240/f19/xiaohui/zmumbcs/hw3/showxbits 
+
+Breakpoint 1, main () at showxbits.c:16
+16	int main() {
+(gdb) s
+18	  int m=0, n;
+(gdb) n
+19	  while(scanf("%d",&n)==1){
+(gdb) n
+123456789
+20	  itox(hexstring, n);
+(gdb) n
+in itox, processing 123456789
+21	  m= xtoi(hexstring);
+(gdb) p n
+$1 = 123456789
+(gdb) n
+in xtoi, processing 75BCD15
+22	  printf("%12d %s %12d\n", n,hexstring, m);
+(gdb) p m
+$2 = 123456789
+(gdb) l
+17	  char hexstring[ENOUGH_SPACE];
+18	  int m=0, n;
+19	  while(scanf("%d",&n)==1){
+20	  itox(hexstring, n);
+21	  m= xtoi(hexstring);
+22	  printf("%12d %s %12d\n", n,hexstring, m);
+23	  }
+24	  return 0;  /* everything is just fine */
+25	}
+26	
+(gdb) bt
+#0  main () at showxbits.c:22
+(gdb) help
+List of classes of commands:
+
+aliases -- Aliases of other commands
+breakpoints -- Making program stop at certain points
+data -- Examining data
+files -- Specifying and examining files
+internals -- Maintenance commands
+obscure -- Obscure features
+running -- Running the program
+stack -- Examining the stack
+status -- Status inquiries
+support -- Support facilities
+tracepoints -- Tracing of program execution without stopping the program
+user-defined -- User-defined commands
+
+Type "help" followed by a class name for a list of commands in 
+that class.
+Type "help all" for the list of all commands.
+Type "help" followed by command name for full documentation.
+Type "apropos word" to search for commands related to "word".
+Command name abbreviations are allowed if unambiguous.
+(gdb) n
+   123456789 75BCD15    123456789
+19	  while(scanf("%d",&n)==1){
+(gdb) n
+24	  return 0;  /* everything is just fine */
+(gdb) n
+25	}
+(gdb) n
+0xf7e24637 in __libc_start_main () from /lib32/libc.so.6
+(gdb) n
+Single stepping until exit from function __libc_start_main,
+which has no line number information.
+[Inferior 1 (process 21205) exited normally]
+(gdb) n
+The program is not being run.
+(gdb) q
+zmumbcs@itserver6:~/cs240/hw3$ ./showxbits
+123456789
+in itox, processing 123456789
+in xtoi, processing 75BCD15
+   123456789 75BCD15    123456789
+zmumbcs@itserver6:~/cs240/hw3$ ls
+showxbits  showxbits.c	typescript  xbits.c  xbits.h
+zmumbcs@itserver6:~/cs240/hw3$ exit
+exit
+
+Script done on Fri 25 Oct 2019 11:06:39 PM EDT

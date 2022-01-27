@@ -1,0 +1,97 @@
+1. Part 1
+
+%./trim <trim.in >trim.out
+
+%od -x trim.in 
+0000000 0909 6f4e 2077 7369 7420 6568 2020 2020
+0000020 2020 0a20 0909 6954 656d 6620 726f 0909
+0000040 090a 6109 6c6c 6720 6f6f 2064 656d 206e
+...
+
+
+% od -x trim.out 
+0000000 0909 6f4e 2077 7369 7420 6568 090a 5409
+0000020 6d69 2065 6f66 0a72 0909 6c61 206c 6f67
+0000040 646f 6d20 6e65 7420 0a6f 0909 6f63 656d
+...
+
+
+2. Part 2
+
+%./reverse <reverse.in >reverse.out
+
+% cat reverse.in 
+Have you heard of palindromes?
+
+In the garden of Eden, on meeting:
+
+"Madam, I'm Adam."
+
+...
+
+
+% cat reverse.out 
+?semordnilap fo draeh uoy evaH
+
+:gniteem no ,nedE fo nedrag eht nI
+
+".madA m'I ,madaM"
+
+...
+
+
+3. Part 3
+
+%./vt <vt.in >vt.out
+
+%od -x vt.in
+0000000 0102 7d7e 612c 627a 5c7f 5a0a
+0000014
+
+
+%cat vt.out 
+SOH,   1
+STX,   2
+  },  7d
+  ~,  7e
+  a,  61
+  ,,  2c
+  b,  62
+  z,  7a
+  \,  5c
+DEL,  7f
+  Z,  5a
+ NL,   a
+
+
+4. Part 4
+
+% ./hist <trim.in 
+DEC  HEX  ASCII  COUNT
+           NAME
+  9    9     HT      10
+ 10    a     NL      5
+ 32   20     SP      29
+ 46   2e      .      1
+ 78   4e      N      1
+ 84   54      T      1
+ 97   61      a      3
+ 99   63      c      1
+100   64      d      2
+101   65      e      6
+102   66      f      2
+...
+
+
+% ./hist <vt.in 
+DEC  HEX  ASCII  COUNT
+           NAME
+  1    1    SOH      1
+  2    2    STX      1
+ 10    a     NL      1
+ 44   2c      ,      1
+ 90   5a      Z      1
+ 92   5c      \      1
+ 97   61      a      1
+...
+

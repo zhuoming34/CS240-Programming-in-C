@@ -1,0 +1,41 @@
+# test cases for alloc and freef
+#
+# first dump initial state of allocbuf
+d
+# free a null pointer to see if free checks for this error
+f 0
+# allocate a block of 92 (uses 100 bytes with the overhead)
+a 92
+# allocate a block of 92 (uses 100 bytes with the overhead)
+a 92
+# allocate a block of 92 (uses 100 bytes with the overhead)
+a 92
+# dump current state of allocbuf to show how much is left
+d
+# allocate a block using up all of the remaining memory
+a 692
+# dump current state of allocbuf to show it's empty
+d
+# try to allocate another block (should fail)
+a 92
+# free a block that is between two blocks in use
+f 1
+# dump current state of allocbuf
+d
+# free a block at bottom of allocbuf with an inuse block above it
+f 3
+# dump current state of allocbuf
+d
+# free a block with free blocks above and below it
+f 2
+# dump current state of allocbuf to show effect of coalesce
+d
+# free last block at top of allocbuf with a free block below it
+f 0
+# try to free a block that is not in use any longer (should fail)
+f 0
+# dump final state of allocbuf which should be same as initial state
+d
+# and quit the test
+q
+
