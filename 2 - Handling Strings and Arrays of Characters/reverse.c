@@ -23,7 +23,7 @@ int main(void){
 end of pseudo code
 */
 	while ((len=my_getline(line,MAXLINE))>0){
-		for (i=0;i<(len/2-1);i++){
+		for (i=0;i<(len/2);i++){
 			c=line[i];
 			line[i]=line[len-2-i];
 			line[len-2-i]=c;
